@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"log"
 	"os"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -10,6 +11,7 @@ import (
 func ParseToken(tokenStr string) (*Claims, error) {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
+		log.Println("missing JWT_SECRET")
 		return nil, errors.New("missing JWT_SECRET")
 	}
 
