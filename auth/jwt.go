@@ -1,34 +1,41 @@
 package auth
 
 import (
-	"errors"
-	"log"
 	"os"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func ParseToken(tokenStr string) (*Claims, error) {
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		log.Println("missing JWT_SECRET")
-		return nil, errors.New("missing JWT_SECRET")
+func GenerateToken(userID int64, role string) (string, error) {
+	claims := Claims{
+		UserID: userID,
+		Role:   role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
 	}
 
-	token, err := jwt.ParseWithClaims(tokenStr, &jwt.MapClaims{}, func(t *jwt.Token) (interface{}, error) {
-		return []byte(secret), nil
+	key := []byte(os.Getenv("JWT_SECRET"))
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(key)
+}
+
+func ParseToken(tokenString string) (*Claims, error) {
+	key := []byte(os.Getenv("JWT_SECRET"))
+
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		return key, nil
 	})
-	if err != nil || !token.Valid {
-		return nil, errors.New("invalid tokenт")
+
+	if err != nil {
+		return nil, err
 	}
 
-	claimsMap, ok := token.Claims.(*jwt.MapClaims)
-	if !ok {
-		return nil, errors.New("invalid claims structure")
+	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		return claims, nil
 	}
 
-	return &Claims{
-		UserID: int64((*claimsMap)["user_id"].(float64)),
-		Role:   (*claimsMap)["role"].(string),
-	}, nil
+	return nil, jwt.ErrSignatureInvalid
 }
