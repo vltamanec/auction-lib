@@ -27,6 +27,7 @@ func Middleware(next http.Handler) http.Handler {
 		claims, err := ParseToken(token)
 		log.Println(claims)
 		if err != nil {
+			log.Println(err)
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
