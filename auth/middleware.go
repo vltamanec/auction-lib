@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -22,7 +23,9 @@ func Middleware(next http.Handler) http.Handler {
 		}
 
 		token := strings.TrimPrefix(authHeader, "Bearer ")
+		log.Println(token)
 		claims, err := ParseToken(token)
+		log.Println(claims)
 		if err != nil {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
